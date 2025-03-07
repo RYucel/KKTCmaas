@@ -96,37 +96,30 @@ const SalaryRise = () => {
   // Calculate rises when data changes
   useEffect(() => {
     if (data.length === 0) return;
-
+  
+    // Get the latest entry (e.g., February 2025)
     const latest = data[data.length - 1];
     const latestYear = latest.year;
     const latestMonth = latest.month;
     const latestIndex = latest.index;
-
-    const janEntry = data.find(d => d.year === latestYear && d.month === 1);
-    if (!janEntry) {
-      setError('Son yıl için Ocak verisi bulunamadı');
+  
+    // Find December data of the previous year (December 2024 for February 2025)
+    const decPreviousYear = data.find(d => d.year === latestYear - 1 && d.month === 12);
+    if (!decPreviousYear) {
+      setError('Önceki yılın Aralık verisi bulunamadı');
       return;
     }
-
-    let guaranteedRiseValue;
-    if (latestMonth <= 6) {
-      guaranteedRiseValue = ((latestIndex / janEntry.index - 1) * 100);
-    } else {
-      const junEntry = data.find(d => d.year === latestYear && d.month === 6);
-      if (!junEntry) {
-        setError('Son yıl için Haziran verisi bulunamadı');
-        return;
-      }
-      const janToLatestChange = (latestIndex / janEntry.index - 1);
-      const janToJunChange = (junEntry.index / janEntry.index - 1);
-      guaranteedRiseValue = ((janToLatestChange - janToJunChange) * 100);
-    }
-
-    const totalChangeValue = ((latestIndex / janEntry.index - 1) * 100);
-
-    // Format with Turkish locale
-    setGuaranteedRise(guaranteedRiseValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    setTotalChange(totalChangeValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  
+    // Calculate "Garantili Artış": compounded change from December of previous year to latest month
+    const guaranteedRisePct = ((latestIndex / decPreviousYear.index - 1) * 100).toFixed(2);
+  
+    // Calculate total change from January of the current year to latest month (for "Ocak Ayından İtibaren")
+    const janEntry = data.find(d => d.year === latestYear && d.month === 1);
+    const totalChangePct = janEntry ? ((latestIndex / janEntry.index - 1) * 100).toFixed(2) : 'N/A';
+  
+    // Update state
+    setGuaranteedRise(guaranteedRisePct);
+    setTotalChange(totalChangePct);
     setLatestDate(`${turkishMonths[latestMonth - 1]} ${latestYear}`);
   }, [data]);
 
